@@ -1,19 +1,19 @@
 {{/*
-	Licensed to the Apache Software Foundation (ASF) under one
-	or more contributor license agreements.  See the NOTICE file
-	distributed with this work for additional information
-	regarding copyright ownership.  The ASF licenses this file
-	to you under the Apache License, Version 2.0 (the
-	"License"); you may not use this file except in compliance
-	with the License.  You may obtain a copy of the License at
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
 
-			http://www.apache.org/licenses/LICENSE-2.0
+      http://www.apache.org/licenses/LICENSE-2.0
 
-	Unless required by applicable law or agreed to in writing, software
-	distributed under the License is distributed on an "AS IS" BASIS,
-	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	See the License for the specific language governing permissions and
-	limitations under the License.
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
 */}}
 
 {{- $env := concat .Values.env .Values.recon.env }}
@@ -22,107 +22,107 @@
 {{- $affinity := or .Values.recon.affinity .Values.affinity }}
 {{- $tolerations := or .Values.recon.tolerations .Values.tolerations }}
 {{- $securityContext := or .Values.recon.securityContext .Values.securityContext }}
+
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-	name: {{ .Release.Name }}-recon
-	labels:
-		{{- include "ozone.labels" . | nindent 4 }}
-		app.kubernetes.io/component: recon
+  name: {{ .Release.Name }}-recon
+  labels:
+    {{- include "ozone.labels" . | nindent 4 }}
+    app.kubernetes.io/component: recon
 spec:
-	replicas: {{ .Values.recon.replicas }}
-	serviceName: {{ .Release.Name }}-recon
-	selector:
-		matchLabels:
-			{{- include "ozone.selectorLabels" . | nindent 6 }}
-			app.kubernetes.io/component: recon
-	template:
-		metadata:
-			annotations:
-				checksum/config: {{ include (print $.Template.BasePath "/ozone-configmap.yaml") . | sha256sum }}
-			labels:
-				{{- include "ozone.selectorLabels" . | nindent 8 }}
-				app.kubernetes.io/component: recon
-		spec:
-			containers:
-				- name: recon
-					image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-					imagePullPolicy: {{ .Values.image.pullPolicy }}
-					{{- with .Values.recon.command }}
-					command: {{- tpl (toYaml .) $ | nindent 12 }}
-					{{- end }}
-					{{- with .Values.recon.args }}
-					args: {{- tpl (toYaml .) $ | nindent 12 }}
-					{{- end }}
-					env:
-						{{- include "ozone.configuration.env" . | nindent 12 }}
-						- name: WAITFOR
-							value: {{ $.Release.Name }}-scm-0.{{ $.Release.Name }}-scm-headless:9876
-						{{- with $env }}
-							{{- tpl (toYaml .) $ | nindent 12 }}
-						{{- end }}
-					{{- with $envFrom }}
-					envFrom: {{- tpl (toYaml .) $ | nindent 12 }}
-					{{- end }}
-					ports:
-						- name: ui
-							containerPort: {{ .Values.recon.service.port }}
-						- name: metrics
-							containerPort: 9891
-					livenessProbe:
-						httpGet:
-							path: /
-							port: ui
-						initialDelaySeconds: 30
-					{{- with .Values.recon.resources }}
-					resources: {{- toYaml . | nindent 12 }}
-					{{- end }}
-					volumeMounts:
-						- name: config
-							mountPath: {{ .Values.configuration.dir }}
-						- name: {{ .Release.Name }}-recon
-							mountPath: {{ .Values.recon.persistence.path }}
-			{{- with $nodeSelector }}
-			nodeSelector: {{- toYaml . | nindent 8 }}
-			{{- end }}
-			{{- with $affinity }}
-			affinity: {{- toYaml . | nindent 8 }}
-			{{- end }}
-			{{- with $tolerations }}
-			tolerations: {{- toYaml . | nindent 8 }}
-			{{- end }}
-			{{- with $securityContext }}
-			securityContext: {{- toYaml . | nindent 8 }}
-			{{- end }}
-			volumes:
-				- name: config
-					projected:
-						sources:
-							- configMap:
-									name: {{ .Release.Name }}-ozone
-							{{- with .Values.configuration.filesFrom }}
-								{{- tpl (toYaml .) $ | nindent 14 }}
-							{{- end }}
-				{{- if not .Values.recon.persistence.enabled }}
-				- name: {{ .Release.Name }}-recon
-					emptyDir: {}
-				{{- end }}
-	{{- if .Values.recon.persistence.enabled }}
-	volumeClaimTemplates:
-		- metadata:
-				name: {{ .Release.Name }}-recon
-				labels:
-					{{- include "ozone.labels" . | nindent 10 }}
-					app.kubernetes.io/component: recon
-			spec:
-				{{- with .Values.recon.persistence.accessModes }}
-				accessModes: {{- toYaml . | nindent 10 }}
-				{{- end }}
-				resources:
-					requests:
-						storage: {{ .Values.recon.persistence.size }}
-				{{- with .Values.recon.persistence.storageClassName }}
-				storageClassName: {{ . }}
-				{{- end }}
-	{{- end }}
-
+  replicas: {{ .Values.recon.replicas }}
+  serviceName: {{ .Release.Name }}-recon
+  selector:
+    matchLabels:
+      {{- include "ozone.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: recon
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/ozone-configmap.yaml") . | sha256sum }}
+      labels:
+        {{- include "ozone.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: recon
+    spec:
+      containers:
+        - name: recon
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.recon.command }}
+          command: {{- tpl (toYaml .) $ | nindent 12 }}
+          {{- end }}
+          {{- with .Values.recon.args }}
+          args: {{- tpl (toYaml .) $ | nindent 12 }}
+          {{- end }}
+          env:
+            {{- include "ozone.configuration.env" . | nindent 12 }}
+            - name: WAITFOR
+              value: "{{ $.Release.Name }}-scm-0.{{ $.Release.Name }}-scm-headless:9876"
+            {{- with $env }}
+              {{- tpl (toYaml .) $ | nindent 12 }}
+            {{- end }}
+          {{- with $envFrom }}
+          envFrom: {{- tpl (toYaml .) $ | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: ui
+              containerPort: {{ .Values.recon.service.port }}
+            - name: metrics
+              containerPort: 9891
+          livenessProbe:
+            httpGet:
+              path: /
+              port: ui
+            initialDelaySeconds: 30
+          {{- with .Values.recon.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: {{ .Values.configuration.dir }}
+            - name: {{ .Release.Name }}-recon
+              mountPath: {{ .Values.recon.persistence.path }}
+      {{- with $nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $securityContext }}
+      securityContext: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: config
+          projected:
+            sources:
+              - configMap:
+                  name: {{ .Release.Name }}-ozone
+              {{- with .Values.configuration.filesFrom }}
+                {{- tpl (toYaml .) $ | nindent 14 }}
+              {{- end }}
+        {{- if not .Values.recon.persistence.enabled }}
+        - name: {{ .Release.Name }}-recon
+          emptyDir: {}
+        {{- end }}
+  {{- if .Values.recon.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ .Release.Name }}-recon
+        labels:
+          {{- include "ozone.labels" . | nindent 10 }}
+          app.kubernetes.io/component: recon
+      spec:
+        {{- with .Values.recon.persistence.accessModes }}
+        accessModes: {{- toYaml . | nindent 10 }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.recon.persistence.size }}
+        {{- with .Values.recon.persistence.storageClassName }}
+        storageClassName: {{ . }}
+        {{- end }}
+  {{- end }}
